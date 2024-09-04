@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Dados JSON</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+        .filter-container {
+            margin: 20px 0;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+
+<h1>Cole seu JSON aqui:</h1>
+<textarea id="jsonInput" placeholder='Cole seu JSON aqui...'></textarea>
+<button id="generateButton">Gerar</button>
+
+<div class="filter-container">
+    <label for="filterSelect">Filtrar por:</label>
+    <select id="filterSelect">
+        <option value="all">Todos</option>
+        <option value="text">Texto</option>
+        <option value="dalle">Imagens</option>
+    </select>
+</div>
+
+<div id="output"></div>
+
+<script>
+    document.getElementById('generateButton').addEventListener('click', function() {
+        const jsonInput = document.getElementById('jsonInput').value;
+        let jsonData;
+
+        try {
+            jsonData = JSON.parse(jsonInput);
+        } catch (e) {
+            alert('JSON inválido. Por favor, verifique e tente novamente.');
+            return;
+        }
+
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = ''; // Limpa o conteúdo anterior
+
+        // Criação da tabela
+        let tableHTML = '<table><thead><tr><th>Timestamp</th><th>Organização</th><th>Operação</th><th>Modelo</th><th>Usuário</th><th>Número de Requisições</th><th>Tamanho da Imagem</th><th>API Key Redacted</th></tr></thead><tbody>';
+        
+        jsonData.data.forEach(item => {
+            const date = new Date(item.timestamp * 1000).toLocaleDateString();
+            tableHTML += `<tr>
+                <td>${date}</td>
+                <td>${item.organization_name}</td>
+                <td>${item.operation}</td>
+                <td>${item.model}</td>
+                <td>${item.user}</td>
+                <td>${item.num_requests || 'N/A'}</td>
+                <td>${item.image_size || 'N/A'}</td>
+                <td>${item.api_key_redacted}</td>
+            </tr>`;
+        });
+
+        tableHTML += '</tbody></table>';
+        outputDiv.innerHTML += tableHTML;
+
+        // Criação do gráfico
+        const chartData = jsonData.data.map(item => ({
+            x: new Date(item.timestamp * 1000),
+            y: item.num_requests || 0, // Usa 0 se num_requests não estiver presente
+            model: item.model,
+            usage_type: item.usage_type
+        }));
+
+        const ctx = document.createElement('canvas');
+        outputDiv.appendChild(ctx);
+
+        const filterSelect = document.getElementById('filterSelect');
+        filterSelect.addEventListener('change', () => {
+            const selectedFilter = filterSelect.value;
+            const filteredData = chartData.filter(item => 
+                selectedFilter === 'all' || item.usage_type === selectedFilter
+            );
+
+            updateChart(ctx, filteredData);
+        });
+
+        updateChart(ctx, chartData);
+    });
+
+    function updateChart(ctx, data) {
+        const chartData = data.map(item => ({
+            x: item.x,
+            y: item.y
+        }));
+
+        if (ctx.chart) {
+            ctx.chart.destroy();
+        }
+
+        ctx.chart = new Chart(ctx, {
+            type: 'bar', // Gráfico de barras
+            data: {
+                datasets: [{
+                    label: 'Número de Requisições',
+                    data: chartData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Data'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Número de Requisições'
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
