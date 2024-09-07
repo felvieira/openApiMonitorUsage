@@ -75,6 +75,23 @@
 <div id="output"></div>
 
 <script>
+    const apiKeyMap = {
+        'sk-...aIA': 'anything llm',
+        'sk-...o7e': 'eleven labs anything llm',
+        'sk-...INa': 'youtube summarize',
+        'sk-...9UH': 'getfiity',
+        'sk-...3YR': 'writebot',
+        'sk-...WLb': 'alexa aws',
+        'sk-...rSi': 'stability.ai writebot',
+        'sk-...sZX': 'umbrella chatbot Ui',
+        'sk-...4cA': 'max ai addon',
+        'sk-...4Ml': 'make.com',
+        'sk-..._zMA': 'radar api key',
+        'sk-...JEA': 'getfitty / make.com / make.com',
+        'sk-...soA': 'personal / felvieira-make / make.com',
+        'sk-...skA': 'key nova pro app getfitty'
+    };
+
     document.getElementById('generateButton').addEventListener('click', function() {
         const jsonInput = document.getElementById('jsonInput').value;
         let jsonData;
@@ -90,10 +107,12 @@
         outputDiv.innerHTML = ''; // Limpa o conteúdo anterior
 
         // Criação da tabela
-        let tableHTML = '<table><thead><tr><th>Timestamp</th><th>Organização</th><th>Operação</th><th>Modelo</th><th>Usuário</th><th>Número de Requisições</th><th>Tamanho da Imagem</th><th>API Key Redacted</th></tr></thead><tbody>';
+        let tableHTML = '<table><thead><tr><th>Timestamp</th><th>Organização</th><th>Operação</th><th>Modelo</th><th>Usuário</th><th>Número de Requisições</th><th>Tamanho da Imagem</th><th>API Key Redacted</th><th>Nome da Key</th></tr></thead><tbody>';
         
         jsonData.data.forEach(item => {
             const date = new Date(item.timestamp * 1000).toLocaleDateString();
+            const apiKeyRedacted = item.api_key_redacted;
+            const keyName = apiKeyMap[apiKeyRedacted] || 'Desconhecido';
             tableHTML += `<tr>
                 <td>${date}</td>
                 <td>${item.organization_name}</td>
@@ -102,7 +121,8 @@
                 <td>${item.user}</td>
                 <td>${item.num_requests || 'N/A'}</td>
                 <td>${item.image_size || 'N/A'}</td>
-                <td>${item.api_key_redacted}</td>
+                <td>${apiKeyRedacted}</td>
+                <td>${keyName}</td>
             </tr>`;
         });
 
